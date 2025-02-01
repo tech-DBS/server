@@ -4,6 +4,9 @@ const { validationResult } = require("express-validator");
 const fs = require("fs");
 const path = require("path");
 
+// aws
+const AWS = require("aws-sdk");
+
 // csv
 const { parse } = require("json2csv");
 
@@ -19,6 +22,13 @@ const axios = require("axios");
 const auth = new google.auth.GoogleAuth({
   keyFile: "./google.json",
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+});
+
+const s3 = new AWS.S3({
+  endpoint: "https://s3.wasabisys.com",
+  accessKeyId: process.env.WASABI_ACCESS_KEY,
+  secretAccessKey: process.env.WASABI_SECRET_KEY,
+  region: "us-east-1",
 });
 
 const genLetter = async (req, res, next) => {
@@ -53,33 +63,32 @@ const genLetter = async (req, res, next) => {
     for (let i = 1; i < data.length; i++) {
       const [name, position] = data[i];
 
-      // const requestData = {
-      //   name: path.basename(DestinationFile),
-      //   password: Password,
-      //   url: SourceFileUrl,
-      //   searchStrings: ["{{name}}", "{{position}}", "{{date}}"],
-      //   replaceStrings: [name, position, currentDateIST],
-      // };
+      const requestData = {
+        name: path.basename(DestinationFile),
+        password: Password,
+        url: SourceFileUrl,
+        searchStrings: ["{{name}}", "{{position}}", "{{date}}"],
+        replaceStrings: [name, position, currentDateIST],
+      };
 
-      // const response = await axios.post(apiUrl, requestData, {
-      //   headers: {
-      //     "x-api-key": PRFCO_API_KEY,
-      //     "Content-Type": "application/json",
-      //   },
-      // });
+      const response = await axios.post(apiUrl, requestData, {
+        headers: {
+          "x-api-key": PRFCO_API_KEY,
+          "Content-Type": "application/json",
+        },
+      });
 
-      // if (response.data.error) {
-      //   console.log("Error from API:", response.data.message);
+      if (response.data.error) {
+        console.log("Error from API:", response.data.message);
 
-      //   return res.status(500).json({ error: response.data.message });
-      // }
+        return res.status(500).json({ error: response.data.message });
+      }
 
       let localData = {
         name,
         position,
         currentDateIST,
-        URL: `i= ${i}`,
-        // URL: response.data.url || ``,
+        URL: response.data.url || ``,
       };
 
       pdfUrls.push(localData);
@@ -91,6 +100,10 @@ const genLetter = async (req, res, next) => {
     fs.writeFileSync(filePath, csv, "utf8");
 
     console.log("CSV file saved successfully: \t", filePath);
+
+    // let fileURL = await uploadFile(filePath, `candOL_${currentDateIST}`);
+
+    // console.log(fileURL.Location);
 
     mainSend(currentDateIST, filePath, data.length);
 
@@ -167,5 +180,26 @@ Tech Digits B&S`,
       console.error(err);
     });
 }
+
+const uploadFile = async (filePath, key) => {
+  try {
+    const fileContent = fs.readFileSync(filePath);
+
+    const params = {
+      Bucket: "lettercsv",
+      Key: key,
+      Body: fileContent,
+      ACL: "public-read",
+    };
+
+    // Upload to Wasabi
+    const data = await s3.upload(params).promise();
+    console.log("File uploaded successfully!", data.Location);
+
+    return data;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+  }
+};
 
 exports.genLetter = genLetter;
