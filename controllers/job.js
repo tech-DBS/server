@@ -18,8 +18,7 @@ const genLetter = async (req, res, next) => {
       return res.status(400).json({ error: "Name and job are required!" });
     }
 
-    const PRFCO_API_KEY =
-      "rishavrajcrj@gmail.com_LrhvH1fRQUgJ2ilLI4OC4xqKuIg1kQJNR3ovs2iLvcVIk3zkfEyMwbrMAMXzGTWL";
+    const PRFCO_API_KEY = process.env.PRFCO_API_KEY;
 
     const SourceFileUrl =
       "https://bytescout-com.s3-us-west-2.amazonaws.com/files/demo-files/cloud-api/pdf-to-text/sample.pdf";
@@ -50,30 +49,19 @@ const genLetter = async (req, res, next) => {
       return res.status(500).json({ error: response.data.message });
     }
 
-    // Download the generated PDF
-    const fileResponse = await axios({
-      method: "get",
-      url: response.data.url,
-      responseType: "stream",
-    });
-
-    console.log(response.data.url);
-
-    // Save the file
-    const writer = fs.createWriteStream(DestinationFile);
-    fileResponse.data.pipe(writer);
-
-    writer.on("finish", () => {
-      console.log(`Generated PDF saved as "${DestinationFile}"`);
-      return res
-        .status(202)
-        .json({ message: "PDF generated successfully", file: DestinationFile });
-    });
-
-    writer.on("error", (err) => {
-      console.error("Error writing file:", err);
-      return res.status(500).json({ error: "Failed to save PDF" });
-    });
+    if (response.data.url) {
+      return res.status(202).json({
+        status: true,
+        message: "Data Generated",
+        URL: response.data.url,
+      });
+    } else {
+      return res.status(202).json({
+        status: false,
+        message: "Unable to Generate",
+        URL: response.data.url,
+      });
+    }
   } catch (error) {
     console.error("Error generating PDF:", error);
     return res.status(500).json({ error: "Internal Server Error" });
