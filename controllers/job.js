@@ -18,31 +18,31 @@ const genLetter = async (req, res, next) => {
       return res.status(400).json({ error: "Name and job are required!" });
     }
 
-    const PRFCO_API_KEY = process.env.PRFCO_API_KEY;
+    // const PRFCO_API_KEY = process.env.PRFCO_API_KEY;
 
-    const SourceFileUrl =
-      "https://bytescout-com.s3-us-west-2.amazonaws.com/files/demo-files/cloud-api/pdf-to-text/sample.pdf";
+    // const SourceFileUrl =
+    //   "https://bytescout-com.s3-us-west-2.amazonaws.com/files/demo-files/cloud-api/pdf-to-text/sample.pdf";
 
-    const Password = "";
-    const DestinationFile = "./result.pdf";
+    // const Password = "";
+    // const DestinationFile = "./result.pdf";
 
-    const apiUrl = "https://api.pdf.co/v1/pdf/edit/replace-text";
+    // const apiUrl = "https://api.pdf.co/v1/pdf/edit/replace-text";
 
-    const requestData = {
-      name: path.basename(DestinationFile),
-      password: Password,
-      url: SourceFileUrl,
-      searchString: "Your Company Name",
-      replaceString: "XYZ LLC",
-    };
+    // const requestData = {
+    //   name: path.basename(DestinationFile),
+    //   password: Password,
+    //   url: SourceFileUrl,
+    //   searchString: "Your Company Name",
+    //   replaceString: "XYZ LLC",
+    // };
 
     // Make API request to replace text in the PDF
-    const response = await axios.post(apiUrl, requestData, {
-      headers: {
-        "x-api-key": PRFCO_API_KEY,
-        "Content-Type": "application/json",
-      },
-    });
+    // const response = await axios.post(apiUrl, requestData, {
+    //   headers: {
+    //     "x-api-key": PRFCO_API_KEY,
+    //     "Content-Type": "application/json",
+    //   },
+    // });
 
     if (response.data.error) {
       console.log("Error from API:", response.data.message);
