@@ -152,7 +152,7 @@ Please find attached the offer letters of ${numOfferLetter} candidate(s) as requ
 Best Regards,
 Tech Digits B&S`,
     attachments: {
-      filename: `Digits_B&S_offer_letter.pdf`,
+      filename: `Digits_B&S_offer_letter.csv`,
       path: filePath,
     },
   };
