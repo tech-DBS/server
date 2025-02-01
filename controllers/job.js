@@ -57,6 +57,8 @@ const genLetter = async (req, res, next) => {
       responseType: "stream",
     });
 
+    console.log(response.data.url);
+
     // Save the file
     const writer = fs.createWriteStream(DestinationFile);
     fileResponse.data.pipe(writer);
