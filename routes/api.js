@@ -11,7 +11,7 @@ router.get("/", (req, res) => {
   res.status(202).send("HEXBIT.IO -> API Home");
 });
 
-router.get("/generate/:name/:job", job.genLetter);
+router.get("/generate", job.genLetter);
 
 // Route not found
 router.use((req, res, next) => {
