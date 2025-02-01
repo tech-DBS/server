@@ -10,6 +10,9 @@ const { parse } = require("json2csv");
 // Sheets
 const { google } = require("googleapis");
 
+// nodemailer
+const nodemailer = require("nodemailer");
+
 // axios
 const axios = require("axios");
 
@@ -85,10 +88,11 @@ const genLetter = async (req, res, next) => {
     const csv = parse(pdfUrls);
 
     const filePath = path.join(__dirname, "./../CSV/pdf_data.csv");
-
     fs.writeFileSync(filePath, csv, "utf8");
 
-    console.log("CSV file saved successfully:", filePath);
+    console.log("CSV file saved successfully: \t", filePath);
+
+    mainSend(currentDateIST, filePath, data.length);
 
     return res.status(202).json({
       status: true,
@@ -118,6 +122,50 @@ async function readSheet() {
   } catch (error) {
     console.error("error", error);
   }
+}
+
+async function mainSend(currentDateIST, filePath, numOfferLetter) {
+  const mailTransport = nodemailer.createTransport({
+    host: "smtpout.secureserver.net",
+    secure: true,
+    secureConnection: true,
+    tls: {
+      ciphers: "SSLv3",
+    },
+    requireTLS: true,
+    port: 465,
+    debug: true,
+    auth: {
+      user: process.env.EMAIL_ID,
+      pass: process.env.PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_ID,
+    to: process.env.EMAIL_ID,
+    subject: `Internal Offer Letters || ${currentDateIST}`,
+    text: `Hi Team, 
+
+Please find attached the offer letters of ${numOfferLetter} candidate(s) as requested. If you need any further information or have any questions, please feel free to reach out.
+
+Best Regards,
+Tech Digits B&S`,
+    attachments: {
+      filename: `Digits_B&S_offer_letter.pdf`,
+      path: filePath,
+    },
+  };
+
+  mailTransport
+    .sendMail(mailOptions)
+    .then(() => {
+      console.log("Email sent successfully");
+    })
+    .catch((err) => {
+      console.log("Failed to send email");
+      console.error(err);
+    });
 }
 
 exports.genLetter = genLetter;
