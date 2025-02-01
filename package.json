@@ -1,0 +1,24 @@
+{
+  "name": "bpo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "author": "Rishav Singh",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "bpo": "file:",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-validator": "^7.2.1",
+    "nodemailer": "^6.10.0",
+    "nodemon": "^3.1.9",
+    "pdf-creator-node": "^2.3.5",
+    "pdf-lib": "^1.17.1",
+    "puppeteer": "^24.1.1"
+  }
+}
