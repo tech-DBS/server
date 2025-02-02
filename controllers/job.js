@@ -19,9 +19,6 @@ const { google } = require("googleapis");
 // nodemailer
 const nodemailer = require("nodemailer");
 
-// axios
-const axios = require("axios");
-
 const auth = new google.auth.GoogleAuth({
   keyFile: "./google.json",
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
