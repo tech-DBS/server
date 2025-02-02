@@ -236,7 +236,6 @@ async function convertHtmlToPdf(
       }
     );
 
-    // if (resPDF) {
     let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
     let fileURL = await getFile(fileID);
 
@@ -245,9 +244,6 @@ async function convertHtmlToPdf(
     } else {
       return "";
     }
-    // }
-
-    // return "";
   } catch (error) {
     console.error("❌ Error generating PDF:", error);
   }
