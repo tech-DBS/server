@@ -3,7 +3,7 @@ const { validationResult } = require("express-validator");
 // file
 const fs = require("fs");
 const path = require("path");
-const { chromium } = require("playwright");
+const htmlToPdf = require("html-to-pdf");
 
 // aws
 const sdk = require("node-appwrite");
@@ -224,29 +224,32 @@ async function convertHtmlToPdf(
       .replaceAll("{{date}}", currentDateIST);
 
     // Launch Puppeteer
-    const browser = await chromium.launch();
-    const page = await browser.newPage();
-
-    await page.setContent(htmlContent, { waitUntil: "load" });
-
-    let resPDF = await page.pdf({
-      path: "./output/output.pdf",
-      format: "A4",
-      printBackground: true,
-    });
-
-    if (resPDF) {
-      let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
-      let fileURL = await getFile(fileID);
-
-      if (fileURL) {
-        return fileURL;
-      } else {
-        return "";
+    htmlToPdf.convertHTMLFile(
+      htmlFilePath,
+      outputPdfPath,
+      function (error, success) {
+        if (error) {
+          console.log("Oh noes! Errorz!");
+          console.log(error);
+        } else {
+          console.log("Woot! Success!");
+          console.log(success);
+        }
       }
-    }
+    );
 
-    return "";
+    // if (resPDF) {
+    let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
+    let fileURL = await getFile(fileID);
+
+    if (fileURL) {
+      return fileURL;
+    } else {
+      return "";
+    }
+    // }
+
+    // return "";
   } catch (error) {
     console.error("❌ Error generating PDF:", error);
   }
