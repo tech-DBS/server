@@ -93,10 +93,10 @@ const genLetter = async (req, res, next) => {
 
     console.log("CSV file saved successfully: \t", filePath);
 
-    let fileID = await uploadFile(filePath);
+    let fileID = await uploadFile(filePath, "pdf", "csv", "csv");
     let fileURL = await getFile(fileID);
 
-    // mainSend(currentDateIST, fileURL, data.length);
+    mainSend(currentDateIST, fileURL, data.length);
 
     return res.status(202).json({
       status: true,
@@ -241,7 +241,7 @@ async function convertHtmlToPdf(
     await browser.close();
 
     if (resPDF) {
-      let fileID = await uploadFile(outputPdfPath);
+      let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
       let fileURL = await getFile(fileID);
 
       if (fileURL) {
