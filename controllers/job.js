@@ -3,9 +3,12 @@ const { validationResult } = require("express-validator");
 // file
 const fs = require("fs");
 const path = require("path");
+const puppeteer = require("puppeteer");
 
 // aws
-const AWS = require("aws-sdk");
+const sdk = require("node-appwrite");
+const { Client, Storage, ID, Permission, Role } = require("node-appwrite");
+const { InputFile } = require("node-appwrite/file");
 
 // csv
 const { parse } = require("json2csv");
@@ -24,12 +27,12 @@ const auth = new google.auth.GoogleAuth({
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
-const s3 = new AWS.S3({
-  endpoint: "https://s3.wasabisys.com",
-  accessKeyId: process.env.WASABI_ACCESS_KEY,
-  secretAccessKey: process.env.WASABI_SECRET_KEY,
-  region: "us-east-1",
-});
+const client = new Client()
+  .setEndpoint("https://cloud.appwrite.io/v1")
+  .setProject(process.env.PROJECT_ID)
+  .setKey(process.env.SECRET_KEY);
+
+const storage = new Storage(client);
 
 const genLetter = async (req, res, next) => {
   try {
@@ -63,33 +66,22 @@ const genLetter = async (req, res, next) => {
     for (let i = 1; i < data.length; i++) {
       const [name, position] = data[i];
 
-      const requestData = {
-        name: path.basename(DestinationFile),
-        password: Password,
-        url: SourceFileUrl,
-        searchStrings: ["{{name}}", "{{position}}", "{{date}}"],
-        replaceStrings: [name, position, currentDateIST],
-      };
-
-      const response = await axios.post(apiUrl, requestData, {
-        headers: {
-          "x-api-key": PRFCO_API_KEY,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.data.error) {
-        console.log("Error from API:", response.data.message);
-
-        return res.status(500).json({ error: response.data.message });
-      }
+      let pdfURL = await convertHtmlToPdf(
+        "./html/index.html",
+        `./output/result.pdf`,
+        name,
+        position,
+        currentDateIST
+      );
 
       let localData = {
         name,
         position,
         currentDateIST,
-        URL: response.data.url || ``,
+        URL: pdfURL || ``,
       };
+
+      console.log(localData);
 
       pdfUrls.push(localData);
     }
@@ -101,11 +93,10 @@ const genLetter = async (req, res, next) => {
 
     console.log("CSV file saved successfully: \t", filePath);
 
-    // let fileURL = await uploadFile(filePath, `candOL_${currentDateIST}`);
+    let fileID = await uploadFile(filePath);
+    let fileURL = await getFile(fileID);
 
-    // console.log(fileURL.Location);
-
-    mainSend(currentDateIST, filePath, data.length);
+    // mainSend(currentDateIST, fileURL, data.length);
 
     return res.status(202).json({
       status: true,
@@ -181,25 +172,89 @@ Tech Digits B&S`,
     });
 }
 
-const uploadFile = async (filePath, key) => {
+const uploadFile = async (filePath, name, position, ext) => {
   try {
-    const fileContent = fs.readFileSync(filePath);
+    if (!fs.existsSync(filePath)) {
+      throw new Error("File does not exist: " + filePath);
+    }
 
-    const params = {
-      Bucket: "lettercsv",
-      Key: key,
-      Body: fileContent,
-      ACL: "public-read",
-    };
+    const resultUpload = await storage.createFile(
+      process.env.BUCKET_ID,
+      ID.unique(),
+      InputFile.fromPath(filePath, `${name}_${position}.${ext}`),
+      [
+        Permission.read(Role.any()),
+        Permission.update(Role.users()),
+        Permission.delete(Role.users()),
+      ]
+    );
 
-    // Upload to Wasabi
-    const data = await s3.upload(params).promise();
-    console.log("File uploaded successfully!", data.Location);
-
-    return data;
+    return resultUpload["$id"];
   } catch (error) {
     console.error("Error uploading file:", error);
   }
 };
+
+async function getFile(fileId) {
+  try {
+    const fileURL = `https://cloud.appwrite.io/v1/storage/buckets/${process.env.BUCKET_ID}/files/${fileId}/view?project=${process.env.PROJECT_ID}`;
+
+    return fileURL;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+  }
+}
+
+async function convertHtmlToPdf(
+  htmlFilePath,
+  outputPdfPath,
+  name,
+  position,
+  currentDateIST
+) {
+  try {
+    // Read the HTML file
+    let htmlContent = fs.readFileSync(htmlFilePath, "utf8");
+
+    htmlContent = htmlContent
+      .replaceAll("{{name}}", name)
+      .replaceAll("{{position}}", position)
+      .replaceAll("{{date}}", currentDateIST);
+
+    // Launch Puppeteer
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    // Set the page content
+    await page.setContent(htmlContent, { waitUntil: "load" });
+
+    // Generate PDF
+    const resPDF = await page.pdf({
+      path: outputPdfPath,
+      format: "A4",
+      printBackground: true,
+    });
+
+    console.log(`✅ PDF created: ${outputPdfPath}`);
+
+    // Close browser
+    await browser.close();
+
+    if (resPDF) {
+      let fileID = await uploadFile(outputPdfPath);
+      let fileURL = await getFile(fileID);
+
+      if (fileURL) {
+        return fileURL;
+      } else {
+        return "";
+      }
+    }
+
+    return "";
+  } catch (error) {
+    console.error("❌ Error generating PDF:", error);
+  }
+}
 
 exports.genLetter = genLetter;
