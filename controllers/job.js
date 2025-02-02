@@ -58,7 +58,7 @@ const genLetter = async (req, res, next) => {
 
     // Check if the file exists
     if (!fs.existsSync(existsPath)) {
-      return res.status(404).json({ status: false, message: "File not found" });
+      return res.status(404).json({ state: false, message: "File not found" });
     }
 
     const data = await readSheet(),
@@ -72,7 +72,7 @@ const genLetter = async (req, res, next) => {
 
     if (data.length === 0) {
       return res.status(204).json({
-        status: false,
+        state: false,
         message: "Unable to fetch data from sheet",
       });
     }
@@ -113,8 +113,10 @@ const genLetter = async (req, res, next) => {
 
     mainSend(currentDateIST, fileURL, data.length);
 
+    console.log("-----------------");
+
     return res.status(202).json({
-      status: true,
+      state: true,
       message: "Data Generated",
     });
   } catch (error) {
