@@ -58,7 +58,7 @@ const genLetter = async (req, res, next) => {
 
     // Check if the file exists
     if (!fs.existsSync(existsPath)) {
-      return res.status(204).json({ status: false, message: "File not found" });
+      return res.status(404).json({ status: false, message: "File not found" });
     }
 
     const data = await readSheet(),
