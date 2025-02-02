@@ -3,7 +3,7 @@ const { validationResult } = require("express-validator");
 // file
 const fs = require("fs");
 const path = require("path");
-const puppeteer = require("puppeteer");
+const { chromium } = require("playwright");
 
 // aws
 const sdk = require("node-appwrite");
@@ -224,37 +224,16 @@ async function convertHtmlToPdf(
       .replaceAll("{{date}}", currentDateIST);
 
     // Launch Puppeteer
-    const browser = await puppeteer.launch({
-      headless: "new",
-      args: [
-        "--disable-setuid-sandbox",
-        "--no-sandbox",
-        "--disable-dev-shm-usage",
-        "--single-process",
-        "--no-zygote",
-      ],
-      executablePath:
-        process.env.NODE_ENV === "PROD"
-          ? process.env.PUPPETEER_EXECUTABLE_PATH
-          : puppeteer.executablePath(),
-    });
+    const browser = await chromium.launch();
     const page = await browser.newPage();
 
-    // Set the page content
-    await page.setContent(htmlContent, { waitUntil: "networkidle2" });
+    await page.setContent(htmlContent, { waitUntil: "load" });
 
-    // Generate PDF
-    const resPDF = await page.pdf({
-      path: outputPdfPath,
+    let resPDF = await page.pdf({
+      path: "./output/output.pdf",
       format: "A4",
       printBackground: true,
-      timeout: 60000,
     });
-
-    console.log(`✅ PDF created: ${outputPdfPath}`);
-
-    // Close browser
-    await browser.close();
 
     if (resPDF) {
       let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
