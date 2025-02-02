@@ -41,12 +41,7 @@ const genLetter = async (req, res, next) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { SourceFileUrl } = req.body,
-      Password = "",
-      data = await readSheet(),
-      apiUrl = process.env.API_URL,
-      DestinationFile = "./result.pdf",
-      PRFCO_API_KEY = process.env.PRFCO_API_KEY,
+    const data = await readSheet(),
       options = {
         timeZone: "Asia/Kolkata",
         day: "2-digit",
