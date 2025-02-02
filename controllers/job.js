@@ -20,7 +20,17 @@ const { google } = require("googleapis");
 const nodemailer = require("nodemailer");
 
 const auth = new google.auth.GoogleAuth({
-  keyFile: "./google.json",
+  credentials: {
+    type: process.env.GOOGLE_TYPE,
+    project_id: process.env.GOOGLE_PROJECT_ID,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    auth_uri: process.env.GOOGLE_AUTH_URI,
+    token_uri: process.env.GOOGLE_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.GOOGLE_AUTH_PROVIDER_CERT_URL,
+    client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT_URL,
+  },
   scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
@@ -218,11 +228,12 @@ async function convertHtmlToPdf(
       args: [
         "--disable-setuid-sandbox",
         "--no-sandbox",
+        "--disable-dev-shm-usage",
         "--single-process",
         "--no-zygote",
       ],
       executablePath:
-        process.env.NODE_ENV === "production"
+        process.env.NODE_ENV === "PROD"
           ? process.env.PUPPETEER_EXECUTABLE_PATH
           : puppeteer.executablePath(),
     });
