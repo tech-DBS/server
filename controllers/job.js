@@ -225,6 +225,7 @@ async function convertHtmlToPdf(
 
     // Launch Puppeteer
     const browser = await puppeteer.launch({
+      headless: "new",
       args: [
         "--disable-setuid-sandbox",
         "--no-sandbox",
@@ -240,13 +241,14 @@ async function convertHtmlToPdf(
     const page = await browser.newPage();
 
     // Set the page content
-    await page.setContent(htmlContent, { waitUntil: "load" });
+    await page.setContent(htmlContent, { waitUntil: "networkidle2" });
 
     // Generate PDF
     const resPDF = await page.pdf({
       path: outputPdfPath,
       format: "A4",
       printBackground: true,
+      timeout: 60000,
     });
 
     console.log(`✅ PDF created: ${outputPdfPath}`);
