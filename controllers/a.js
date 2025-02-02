@@ -1,39 +1,21 @@
-const puppeteer = require("puppeteer");
-
+const { chromium } = require("playwright");
 const fs = require("fs");
 
-async function convertHtmlToPdf(htmlFilePath, outputPdfPath) {
-  try {
-    // Read the HTML file
-    let htmlContent = fs.readFileSync(htmlFilePath, "utf8");
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
 
-    htmlContent = htmlContent
-      .replaceAll("{{name}}", `Rishva Singh`)
-      .replaceAll("{{position}}", `Analyst`)
-      .replaceAll("{{date}}", `2/02/2025`);
+  // Load local HTML file
+  const htmlContent = fs.readFileSync("./html/index.html", "utf8");
+  await page.setContent(htmlContent, { waitUntil: "load" });
 
-    // Launch Puppeteer
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
+  // Save as PDF
+  await page.pdf({
+    path: "./output/output.pdf",
+    format: "A4",
+    printBackground: true,
+  });
 
-    // Set the page content
-    await page.setContent(htmlContent, { waitUntil: "load" });
-
-    // Generate PDF
-    await page.pdf({
-      path: outputPdfPath,
-      format: "A4",
-      printBackground: true,
-    });
-
-    console.log(`✅ PDF created: ${outputPdfPath}`);
-
-    // Close browser
-    await browser.close();
-  } catch (error) {
-    console.error("❌ Error generating PDF:", error);
-  }
-}
-
-// Example Usage
-convertHtmlToPdf("./controllers/index.html", "./controllers/result.pdf");
+  await browser.close();
+  console.log("PDF successfully created: output.pdf");
+})();
