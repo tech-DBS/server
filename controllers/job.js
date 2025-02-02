@@ -48,6 +48,19 @@ const genLetter = async (req, res, next) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
+    const JobName = req.params.JobName;
+
+    console.log(JobName);
+
+    const existsPath = path.join(__dirname, `./../html/${JobName}.html`);
+
+    console.log(existsPath);
+
+    // Check if the file exists
+    if (!fs.existsSync(existsPath)) {
+      return res.status(204).json({ status: false, message: "File not found" });
+    }
+
     const data = await readSheet(),
       options = {
         timeZone: "Asia/Kolkata",
@@ -69,7 +82,7 @@ const genLetter = async (req, res, next) => {
       const [name, position] = data[i];
 
       let pdfURL = await convertHtmlToPdf(
-        "./html/index.html",
+        `./html/${JobName}.html`,
         `./output/result.pdf`,
         name,
         position,
@@ -103,7 +116,6 @@ const genLetter = async (req, res, next) => {
     return res.status(202).json({
       status: true,
       message: "Data Generated",
-      pdfUrls,
     });
   } catch (error) {
     console.error("Error generating PDF:", error);
