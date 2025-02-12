@@ -322,22 +322,40 @@ async function convertHtmlToPdf(
 
     htmlContent = htmlContent
       .replaceAll("{{name}}", name)
-      .replaceAll("{{position}}", position);
-    // .replaceAll("{{date}}", currentDateIST);
+      .replaceAll("{{position}}", position)
+      .replaceAll("{{date}}", currentDateIST);
+
+    htmlContent = htmlContent.trim();
+
+    const options = {
+      format: "A4",
+      border: {
+        top: "1mm",
+        right: "0mm",
+        bottom: "0mm",
+        left: "1mm",
+      },
+      paginationOffset: 1,
+      footer: {
+        height: "0mm",
+      },
+    };
 
     // Convert HTML to PDF
     return new Promise((resolve, reject) => {
-      pdf.create(htmlContent).toFile(outputPdfPath, async (err, res) => {
-        if (err) {
-          console.error("Error generating PDF:", err);
-          return reject(err);
-        }
-        console.log("PDF generated successfully:", res.filename);
+      pdf
+        .create(htmlContent, options)
+        .toFile(outputPdfPath, async (err, res) => {
+          if (err) {
+            console.error("Error generating PDF:", err);
+            return reject(err);
+          }
+          console.log("PDF generated successfully:", res.filename);
 
-        let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
-        let fileURL = await getFile(fileID);
-        resolve(fileURL || "");
-      });
+          let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
+          let fileURL = await getFile(fileID);
+          resolve(fileURL || "");
+        });
     });
   } catch (error) {
     console.error("❌ Error generating PDF:", error);
