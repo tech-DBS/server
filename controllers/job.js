@@ -3,7 +3,7 @@ const { validationResult } = require("express-validator");
 // file
 const fs = require("fs");
 const path = require("path");
-const htmlToPdf = require("html-to-pdf");
+const pdf = require("html-pdf");
 
 // aws
 const sdk = require("node-appwrite");
@@ -237,18 +237,14 @@ async function convertHtmlToPdf(
       .replaceAll("{{position}}", position)
       .replaceAll("{{date}}", currentDateIST);
 
-    // Launch Puppeteer
-    htmlToPdf.convertHTMLFile(
-      htmlFilePath,
-      outputPdfPath,
-      function (error, success) {
-        if (error) {
-          console.log(error);
-        } else {
-          console.log(success);
-        }
+    // Convert HTML to PDF
+    pdf.create(htmlContent).toFile(outputPdfPath, (err, res) => {
+      if (err) {
+        console.error("Error generating PDF:", err);
+      } else {
+        console.log("PDF generated successfully:", res.filename);
       }
-    );
+    });
 
     let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
     let fileURL = await getFile(fileID);
