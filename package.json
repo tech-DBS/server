@@ -15,6 +15,7 @@
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "googleapis": "^144.0.0",
+    "html-pdf": "^3.0.1",
     "html-to-pdf": "^0.1.11",
     "json2csv": "^6.0.0-alpha.2",
     "node-appwrite": "^15.0.0",
