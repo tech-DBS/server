@@ -111,7 +111,7 @@ const genLetter = async (req, res, next) => {
     let fileID = await uploadFile(filePath, "pdf", "csv", "csv");
     let fileURL = await getFile(fileID);
 
-    mainSend(currentDateIST, fileURL, data.length);
+    mainSend(currentDateIST, fileURL, data.length - 1);
 
     console.log("-----------------");
 
