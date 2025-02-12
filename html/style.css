@@ -16,10 +16,9 @@
 }
 
 .contentDiv {
-  background-color: aqua;
   position: absolute;
   top: 300px;
   width: 100%;
-  font-size: 32px;
+  font-size: 28px;
   padding: 0px 50px;
 }
