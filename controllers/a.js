@@ -1,15 +1,22 @@
-const htmlToPdf = require("html-to-pdf");
+const pdf = require("html-pdf");
+const fs = require("fs");
 
-htmlToPdf.convertHTMLFile(
-  "./html/index.html",
-  "./output/output.pdf",
-  function (error, success) {
-    if (error) {
-      console.log("Oh noes! Errorz!");
-      console.log(error);
-    } else {
-      console.log("Woot! Success!");
-      console.log(success);
-    }
+const htmlPath = "./html/Freelence Associate.html";
+const outputPath = "./output/output11.pdf";
+
+// Read the HTML file
+fs.readFile(htmlPath, "utf8", (err, html) => {
+  if (err) {
+    console.error("Error reading HTML file:", err);
+    return;
   }
-);
+
+  // Convert HTML to PDF
+  pdf.create(html).toFile(outputPath, (err, res) => {
+    if (err) {
+      console.error("Error generating PDF:", err);
+    } else {
+      console.log("PDF generated successfully:", res.filename);
+    }
+  });
+});
