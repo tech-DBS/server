@@ -4,6 +4,7 @@ const { validationResult } = require("express-validator");
 const fs = require("fs");
 const path = require("path");
 const pdf = require("html-pdf");
+const { v4: uuidv4 } = require("uuid"); // Import v4 (random UUID)
 
 // aws
 const sdk = require("node-appwrite");
@@ -50,11 +51,7 @@ const genLetter = async (req, res, next) => {
 
     const JobName = req.params.JobName;
 
-    console.log(JobName);
-
     const existsPath = path.join(__dirname, `./../html/${JobName}.html`);
-
-    console.log(existsPath);
 
     // Check if the file exists
     if (!fs.existsSync(existsPath)) {
@@ -70,7 +67,7 @@ const genLetter = async (req, res, next) => {
       },
       currentDateIST = new Date().toLocaleDateString("en-IN", options);
 
-    if (data.length < 1) {
+    if (data.length === 2) {
       return res.status(204).json({
         state: false,
         message: "Unable to fetch data from sheet",
@@ -79,12 +76,11 @@ const genLetter = async (req, res, next) => {
 
     let pdfUrls = [];
     for (let i = 1; i < data.length; i++) {
-      console.log(data);
       const [name, position, subject, body, personEmail] = data[i];
 
       let pdfURL = await convertHtmlToPdf(
         `./html/${JobName}.html`,
-        `./output/result.pdf`,
+        `./output/result${i}.pdf`,
         name,
         position,
         currentDateIST
@@ -97,9 +93,11 @@ const genLetter = async (req, res, next) => {
         URL: pdfURL || ``,
       };
 
+      console.log(localData);
+
       pdfUrls.push(localData);
 
-      mainSend(
+      await mainSend(
         currentDateIST,
         pdfURL,
         data.length - 1,
@@ -109,6 +107,13 @@ const genLetter = async (req, res, next) => {
         body,
         personEmail
       );
+
+      localData = {
+        name: "",
+        position: "",
+        currentDateIST: "",
+        URL: ``,
+      };
     }
 
     const csv = parse(pdfUrls);
@@ -172,6 +177,7 @@ async function mainSendAdmin(currentDateIST, filePath, numOfferLetter) {
   const mailOptions = {
     from: process.env.EMAIL_ID,
     to: process.env.EMAIL_ID,
+    // cc: "drishtik2022@gmail.com,rishikaagarwal576rkk@gmail.com",
     subject: `Internal Offer Letters || ${currentDateIST}`,
     text: `Hi Team, 
 
@@ -259,16 +265,25 @@ Tech Digits B&S`,
     });
 }
 
-const uploadFile = async (filePath, name, position, ext) => {
+const uploadFile = async (filePath, PersonName, position, ext) => {
   try {
     if (!fs.existsSync(filePath)) {
       throw new Error("File does not exist: " + filePath);
     }
+    // Generate a UUID
+    const uniqueId = uuidv4();
+
+    console.log("Generated UUID:", uniqueId + " || " + uniqueId.slice(-4));
+
+    console.log(PersonName, position, ext);
 
     const resultUpload = await storage.createFile(
       process.env.BUCKET_ID,
       ID.unique(),
-      InputFile.fromPath(filePath, `${name}_${position}.${ext}`),
+      InputFile.fromPath(
+        filePath,
+        `${PersonName}_${position}_${uniqueId.slice(-4)}.${ext}`
+      ),
       [
         Permission.read(Role.any()),
         Permission.update(Role.users()),
@@ -303,28 +318,27 @@ async function convertHtmlToPdf(
     // Read the HTML file
     let htmlContent = fs.readFileSync(htmlFilePath, "utf8");
 
+    console.log(name + " " + position);
+
     htmlContent = htmlContent
       .replaceAll("{{name}}", name)
-      .replaceAll("{{position}}", position)
-      .replaceAll("{{date}}", currentDateIST);
+      .replaceAll("{{position}}", position);
+    // .replaceAll("{{date}}", currentDateIST);
 
     // Convert HTML to PDF
-    pdf.create(htmlContent).toFile(outputPdfPath, (err, res) => {
-      if (err) {
-        console.error("Error generating PDF:", err);
-      } else {
+    return new Promise((resolve, reject) => {
+      pdf.create(htmlContent).toFile(outputPdfPath, async (err, res) => {
+        if (err) {
+          console.error("Error generating PDF:", err);
+          return reject(err);
+        }
         console.log("PDF generated successfully:", res.filename);
-      }
+
+        let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
+        let fileURL = await getFile(fileID);
+        resolve(fileURL || "");
+      });
     });
-
-    let fileID = await uploadFile(outputPdfPath, name, position, "pdf");
-    let fileURL = await getFile(fileID);
-
-    if (fileURL) {
-      return fileURL;
-    } else {
-      return "";
-    }
   } catch (error) {
     console.error("❌ Error generating PDF:", error);
   }
