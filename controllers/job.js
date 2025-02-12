@@ -70,7 +70,7 @@ const genLetter = async (req, res, next) => {
       },
       currentDateIST = new Date().toLocaleDateString("en-IN", options);
 
-    if (data.length === 0) {
+    if (data.length < 1) {
       return res.status(204).json({
         state: false,
         message: "Unable to fetch data from sheet",
@@ -79,7 +79,8 @@ const genLetter = async (req, res, next) => {
 
     let pdfUrls = [];
     for (let i = 1; i < data.length; i++) {
-      const [name, position] = data[i];
+      console.log(data);
+      const [name, position, subject, body, personEmail] = data[i];
 
       let pdfURL = await convertHtmlToPdf(
         `./html/${JobName}.html`,
@@ -96,9 +97,18 @@ const genLetter = async (req, res, next) => {
         URL: pdfURL || ``,
       };
 
-      console.log(localData);
-
       pdfUrls.push(localData);
+
+      mainSend(
+        currentDateIST,
+        pdfURL,
+        data.length - 1,
+        name,
+        position,
+        subject,
+        body,
+        personEmail
+      );
     }
 
     const csv = parse(pdfUrls);
@@ -111,9 +121,7 @@ const genLetter = async (req, res, next) => {
     let fileID = await uploadFile(filePath, "pdf", "csv", "csv");
     let fileURL = await getFile(fileID);
 
-    mainSend(currentDateIST, fileURL, data.length - 1);
-
-    console.log("-----------------");
+    mainSendAdmin(currentDateIST, fileURL, data.length - 1);
 
     return res.status(202).json({
       state: true,
@@ -144,7 +152,7 @@ async function readSheet() {
   }
 }
 
-async function mainSend(currentDateIST, filePath, numOfferLetter) {
+async function mainSendAdmin(currentDateIST, filePath, numOfferLetter) {
   const mailTransport = nodemailer.createTransport({
     host: "smtpout.secureserver.net",
     secure: true,
@@ -169,6 +177,8 @@ async function mainSend(currentDateIST, filePath, numOfferLetter) {
 
 Please find attached the offer letters of ${numOfferLetter} candidate(s) as requested. If you need any further information or have any questions, please feel free to reach out.
 
+Note - Mail has been send to the People as well.
+
 Best Regards,
 Tech Digits B&S`,
     attachments: {
@@ -180,10 +190,71 @@ Tech Digits B&S`,
   mailTransport
     .sendMail(mailOptions)
     .then(() => {
-      console.log("Email sent successfully");
+      console.log("Email sent successfully || Admin Email");
     })
     .catch((err) => {
-      console.log("Failed to send email");
+      console.log("Failed to send email || Admin Email");
+      console.error(err);
+    });
+}
+
+async function mainSend(
+  currentDateIST,
+  filePath,
+  numOfferLetter,
+  name,
+  position,
+  subject,
+  body,
+  personEmail
+) {
+  const mailTransport = nodemailer.createTransport({
+    host: "smtpout.secureserver.net",
+    secure: true,
+    secureConnection: true,
+    tls: {
+      ciphers: "SSLv3",
+    },
+    requireTLS: true,
+    port: 465,
+    debug: true,
+    auth: {
+      user: process.env.EMAIL_ID,
+      pass: process.env.PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_ID,
+    to: personEmail,
+    // cc: "drishtik2022@gmail.com,rishikaagarwal576rkk@gmail.com",
+    subject:
+      subject && subject !== "NULL" ? subject : `Offer Letters - ${position}`,
+    text:
+      body && body !== "NULL"
+        ? body
+        : `Hi ${name}, 
+
+Please find attached the offer letters of ${position}. 
+If you need any further information or have any questions, please feel free to reach out at connect@digitsbpo.in.
+
+Note - System Generated Email [${currentDateIST}].
+
+Best Regards,
+Tech Digits B&S`,
+    attachments: {
+      filename: `Digits_B&S_offer_letter.pdf`,
+      path: filePath,
+    },
+  };
+
+  mailTransport
+    .sendMail(mailOptions)
+    .then(() => {
+      console.log("Email sent successfully || Person Email");
+    })
+    .catch((err) => {
+      console.log("Failed to send email  || Person Email");
       console.error(err);
     });
 }
