@@ -257,10 +257,10 @@ Tech Digits B&S`,
   mailTransport
     .sendMail(mailOptions)
     .then(() => {
-      console.log("Email sent successfully || Person Email");
+      console.log("Email sent successfully || Person Email \t" + personEmail);
     })
     .catch((err) => {
-      console.log("Failed to send email  || Person Email");
+      console.log("Failed to send email  || Person Email \t" + personEmail);
       console.error(err);
     });
 }
