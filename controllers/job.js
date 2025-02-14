@@ -177,7 +177,7 @@ async function mainSendAdmin(currentDateIST, filePath, numOfferLetter) {
   const mailOptions = {
     from: process.env.EMAIL_ID,
     to: process.env.EMAIL_ID,
-    // cc: "drishtik2022@gmail.com,rishikaagarwal576rkk@gmail.com",
+    cc: "drishtik2022@gmail.com,rishikaagarwal576rkk@gmail.com",
     subject: `Internal Offer Letters || ${currentDateIST}`,
     text: `Hi Team, 
 
@@ -233,7 +233,7 @@ async function mainSend(
   const mailOptions = {
     from: process.env.EMAIL_ID,
     to: personEmail,
-    // cc: "drishtik2022@gmail.com,rishikaagarwal576rkk@gmail.com",
+    cc: "drishtik2022@gmail.com,rishikaagarwal576rkk@gmail.com",
     subject:
       subject && subject !== "NULL" ? subject : `Offer Letters - ${position}`,
     text:
