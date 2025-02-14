@@ -330,10 +330,10 @@ async function convertHtmlToPdf(
     const options = {
       format: "A4",
       border: {
-        top: "10mm",
+        top: "5mm",
         right: "0mm",
         bottom: "0mm",
-        left: "10mm",
+        left: "5mm",
       },
       paginationOffset: 1,
       footer: {
